@@ -681,9 +681,9 @@ struct find_predicate_prefix
 	{
 	#ifdef PUGIXML_WCHAR_MODE
 		// can't use wcsncmp here because of a bug in DMC
-		return std::basic_string<char_t>(obj.name()).compare(0, wcslen(prefix), prefix) == 0;
+		return std::basic_string<char_t>(obj.name().data()).compare(0, wcslen(prefix), prefix) == 0;
 	#else
-		return strncmp(obj.name(), prefix, strlen(prefix)) == 0;
+		return strncmp(obj.name().data(), prefix, strlen(prefix)) == 0;
 	#endif
 	}
 };
@@ -795,7 +795,12 @@ struct test_walker: xml_tree_walker
 	std::basic_string<char_t> depthstr() const
 	{
 		char buf[32];
+
+	#if __cplusplus >= 201103 || defined(__APPLE__) // Xcode 14 warns about use of sprintf in C++98 builds
+		snprintf(buf, sizeof(buf), "%d", depth());
+	#else
 		sprintf(buf, "%d", depth());
+	#endif
 
 	#ifdef PUGIXML_WCHAR_MODE
 		wchar_t wbuf[32];

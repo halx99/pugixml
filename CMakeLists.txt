@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.4)
-project(pugixml VERSION 1.11 LANGUAGES CXX)
+project(pugixml VERSION 1.13 LANGUAGES CXX)
 
 include(CMakePackageConfigHelpers)
 include(CMakeDependentOption)
@@ -33,7 +33,7 @@ option(BUILD_SHARED_LIBS "Build shared instead of static library" OFF)
 cmake_dependent_option(PUGIXML_BUILD_SHARED_AND_STATIC_LIBS
   "Build both shared and static libraries" OFF
   "BUILD_SHARED_LIBS" OFF)
-  
+
 # Expose options from the pugiconfig.hpp
 option(PUGIXML_WCHAR_MODE "Enable wchar_t mode" OFF)
 option(PUGIXML_COMPACT "Enable compact mode" OFF)
@@ -101,6 +101,10 @@ if (BUILD_SHARED_LIBS)
     ${PROJECT_SOURCE_DIR}/src/pugixml.cpp)
   add_library(pugixml::shared ALIAS pugixml-shared)
   list(APPEND libs pugixml-shared)
+  string(CONCAT pugixml.msvc $<OR:
+    $<STREQUAL:${CMAKE_CXX_COMPILER_FRONTEND_VARIANT},MSVC>,
+    $<CXX_COMPILER_ID:MSVC>
+  >)
 
   set_property(TARGET pugixml-shared PROPERTY EXPORT_NAME shared)
   target_include_directories(pugixml-shared
@@ -111,7 +115,8 @@ if (BUILD_SHARED_LIBS)
       ${PUGIXML_BUILD_DEFINES}
       ${PUGIXML_PUBLIC_DEFINITIONS}
     PRIVATE
-      $<$<CXX_COMPILER_ID:MSVC>:PUGIXML_API=__declspec\(dllexport\)>)
+      PUGIXML_API=$<IF:${pugixml.msvc},__declspec\(dllexport\),__attribute__\(\(visibility\("default"\)\)\)>
+    )
   target_compile_options(pugixml-shared
     PRIVATE
       ${msvc-rt-mtd-shared}
